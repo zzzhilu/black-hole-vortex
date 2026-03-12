@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Black Hole Vortex — Generative Art</title>
+  <meta name="description"
+    content="A generative art piece featuring white tendrils growing outward from a black hole in 3D space, forming an infinite vortex pattern.">
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Three.js via ES Module importmap (CDN) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+
+<body>
+  <div id="canvas-container"></div>
+  <div id="loading">LOADING</div>
+
+  <!-- Camera Control Panel -->
+  <div id="ui-wrapper">
+    <div id="ui-header">
+      <span>⚙ Camera</span>
+      <button id="ui-toggle" title="Toggle panel">—</button>
+    </div>
+    <div id="camera-panel"></div>
+  </div>
+
+  <script>
+    // Panel collapse/expand toggle
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('ui-toggle');
+      const panel = document.getElementById('camera-panel');
+      btn.addEventListener('click', () => {
+        panel.classList.toggle('collapsed');
+        btn.textContent = panel.classList.contains('collapsed') ? '+' : '—';
+      });
+    });
+  </script>
+  <script type="module" src="js/main.js"></script>
+</body>
+
+</html>
