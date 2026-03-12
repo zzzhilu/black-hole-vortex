@@ -96,6 +96,14 @@
 
 ## 啟動方式
 
+### 🌐 線上瀏覽
+
+直接開啟 GitHub Pages：
+
+👉 https://zzzhilu.github.io/black-hole-vortex/
+
+### 💻 本地開發
+
 ```bash
 npx -y http-server . -p 3000 -c-1
 ```
