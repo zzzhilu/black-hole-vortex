@@ -155,7 +155,7 @@ export class BranchSystem {
 
     _spawnInitialBranches() {
         const count = CONFIG.initialBranchCount;
-        const spawnOffset = 2.0;
+        const spawnOffset = Math.max(2.0, CONFIG.blackHoleRadius * 1.25);
         for (let i = 0; i < count; i++) {
             const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.15;
             const dir = this._makeFlatDir(angle);
@@ -180,7 +180,8 @@ export class BranchSystem {
         if (this.frameCount % CONFIG.spawnInterval === 0) {
             const angle = Math.random() * Math.PI * 2;
             const dir = this._makeFlatDir(angle);
-            const origin = dir.clone().multiplyScalar(2.0);
+            const spawnOffset = Math.max(2.0, CONFIG.blackHoleRadius * 1.25);
+            const origin = dir.clone().multiplyScalar(spawnOffset);
             origin.y = 0;
             this._createBranch(origin, dir, 0);
         }

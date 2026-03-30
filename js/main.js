@@ -19,10 +19,15 @@ let branchSystem, blackHole;
 let clock;
 let cameraAngle = 0;
 let cameraPhi = 0.3;
+let targetCameraAngle = 0;
+let targetCameraPhi = 0.3;
 let paused = false;
+let isDragging = false;
+let previousPointerX = 0;
+let previousPointerY = 0;
 
 // ── LocalStorage persistence ──
-const STORAGE_KEY = 'bhv_camera';
+const STORAGE_KEY = 'bhv_camera_v4';
 
 function saveCameraSettings() {
     const data = {
@@ -60,8 +65,8 @@ function loadCameraSettings() {
         const d = JSON.parse(raw);
         if (d.distance != null) CONFIG.cameraDistance = d.distance;
         if (d.fov != null) CONFIG.cameraFov = d.fov;
-        if (d.hAngle != null) cameraAngle = d.hAngle;
-        if (d.vAngle != null) cameraPhi = d.vAngle;
+        if (d.hAngle != null) { cameraAngle = d.hAngle; targetCameraAngle = d.hAngle; }
+        if (d.vAngle != null) { cameraPhi = d.vAngle; targetCameraPhi = d.vAngle; }
         if (d.rotateSpeed != null) CONFIG.cameraRotateSpeed = d.rotateSpeed;
         if (d.autoRotate != null) CONFIG.cameraAutoRotate = d.autoRotate;
         if (d.growthSpeed != null) CONFIG.growthSpeed = d.growthSpeed;
@@ -142,6 +147,71 @@ function init() {
     composer.addPass(fxaaPass);
     composer._fxaaPass = fxaaPass; // keep reference for resize
 
+    // Organic Noise + Edge Chromatic Aberration + Gravitational Lens Pass
+    const NoiseAbeShader = {
+        uniforms: {
+            'tDiffuse': { value: null },
+            'time': { value: 0 },
+            'amount': { value: 0.0035 }, // chromatic aberration amount
+            'noiseIntensity': { value: 0.045 }
+        },
+        vertexShader: `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform sampler2D tDiffuse;
+            uniform float time;
+            uniform float amount;
+            uniform float noiseIntensity;
+            varying vec2 vUv;
+            
+            float random(vec2 st) {
+                return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+            }
+            
+            void main() {
+                vec2 center = vec2(0.5);
+                vec2 offset = vUv - center;
+                float dist = length(offset);
+                vec2 dir = normalize(offset);
+                if (dist == 0.0) dir = vec2(0.0);
+                
+                // ── 1. Chromatic Aberration (Edges Only) ──
+                // Normal edge shift without central gravitational distortion
+                float shift = amount * dist * dist * 4.0;
+                
+                float r = texture2D(tDiffuse, vUv + dir * shift).r;
+                float g = texture2D(tDiffuse, vUv).g;
+                float b = texture2D(tDiffuse, vUv - dir * shift).b;
+                vec3 color = vec3(r, g, b);
+                
+                // ── 3. Center Glow ──
+                // A very soft ambient glow around the center
+                float haloMask = pow(max(0.0, 1.0 - (dist / 0.2)), 2.0);
+                // Keep intensity low to not blow out the original 3D black hole mesh
+                color += vec3(0.6, 0.8, 1.0) * haloMask * 0.06;
+                
+                // ── 4. Film Grain Noise ──
+                float noise = random(vUv * 150.0 + fract(time)) * 2.0 - 1.0;
+                color += noise * noiseIntensity;
+                
+                // ── 5. Vignette ──
+                float vignette = 1.0 - smoothstep(0.3, 1.4, dist);
+                color *= vignette * 1.1; // boost brightness slightly to compensate
+                
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `
+    };
+    const noisePass = new ShaderPass(NoiseAbeShader);
+    composer.addPass(noisePass);
+    composer._noisePass = noisePass;
+
+
     // Hide loading
     const loading = document.getElementById('loading');
     if (loading) loading.classList.add('hidden');
@@ -149,6 +219,37 @@ function init() {
     // Events
     window.addEventListener('resize', onResize);
     window.addEventListener('keydown', onKeyDown);
+
+    // Mouse/Touch Drag for Camera
+    window.addEventListener('pointerdown', (e) => {
+        // Prevent dragging if clicking on the UI panel
+        if (e.target.closest('#ui-wrapper')) return;
+        isDragging = true;
+        previousPointerX = e.clientX;
+        previousPointerY = e.clientY;
+    });
+    window.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        const deltaX = e.clientX - previousPointerX;
+        const deltaY = e.clientY - previousPointerY;
+        
+        // Apply to target instead of directly to camera (damping effect)
+        targetCameraAngle -= deltaX * 0.002;
+        targetCameraPhi -= deltaY * 0.002;
+        targetCameraPhi = Math.max(-1.4, Math.min(1.4, targetCameraPhi));
+        
+        // Sync sliders if UI is open
+        const panel = document.getElementById('camera-panel');
+        if (panel && panel._hSlider) panel._hSlider.value = targetCameraAngle % (Math.PI * 2);
+        const vSlider = document.getElementById('cam-v');
+        if (vSlider) vSlider.value = targetCameraPhi;
+        
+        previousPointerX = e.clientX;
+        previousPointerY = e.clientY;
+    });
+    window.addEventListener('pointerup', () => {
+        isDragging = false;
+    });
 
     // Build UI
     buildCameraUI();
@@ -217,16 +318,18 @@ function buildCameraUI() {
     });
 
     // Horizontal angle
-    const hSlider = makeSlider('H-Angle', 'cam-h', -3.14, 3.14, 0.01, cameraAngle, (v) => {
-        cameraAngle = v;
+    const hSlider = makeSlider('H-Angle', 'cam-h', -3.14, 3.14, 0.01, targetCameraAngle, (v) => {
+        targetCameraAngle = v;
+        cameraAngle = v; // Instant update for slider
         CONFIG.cameraAutoRotate = false;
         autoChk.checked = false;
         saveCameraSettings();
     });
 
     // Vertical angle
-    makeSlider('V-Angle', 'cam-v', -1.5, 1.5, 0.01, cameraPhi, (v) => {
-        cameraPhi = v;
+    makeSlider('V-Angle', 'cam-v', -1.5, 1.5, 0.01, targetCameraPhi, (v) => {
+        targetCameraPhi = v;
+        cameraPhi = v; // Instant update for slider
         CONFIG.cameraAutoRotate = false;
         autoChk.checked = false;
         saveCameraSettings();
@@ -511,18 +614,27 @@ function animate() {
 
     const elapsed = clock.getElapsedTime();
 
-    // Camera auto-rotate
+    if (composer && composer._noisePass) {
+        composer._noisePass.uniforms.time.value = elapsed;
+    }
+
+    // Camera auto-rotate applies to the target angles
     if (CONFIG.cameraAutoRotate) {
-        cameraAngle += CONFIG.cameraRotateSpeed;
-        // Vertical oscillation with clamping
-        cameraPhi += CONFIG.cameraVRotateSpeed;
-        cameraPhi = Math.max(-1.4, Math.min(1.4, cameraPhi));
-        // Sync UI slider
+        targetCameraAngle += CONFIG.cameraRotateSpeed;
+        targetCameraPhi += CONFIG.cameraVRotateSpeed;
+        targetCameraPhi = Math.max(-1.4, Math.min(1.4, targetCameraPhi));
+        
+        // Sync UI slider only if not dragging to avoid jumping
         const panel = document.getElementById('camera-panel');
-        if (panel && panel._hSlider) {
-            panel._hSlider.value = cameraAngle % Math.PI;
+        if (panel && panel._hSlider && !isDragging) {
+            panel._hSlider.value = targetCameraAngle % (Math.PI * 2);
         }
     }
+    
+    // Damping: smoothly interpolate current angle towards target
+    cameraAngle += (targetCameraAngle - cameraAngle) * 0.08;
+    cameraPhi += (targetCameraPhi - cameraPhi) * 0.08;
+
     updateCameraPosition();
 
     // Update systems (skip when paused, but still render)
@@ -561,6 +673,54 @@ function onResize() {
     }
 }
 
+// ── Audio Setup ──
+function initAudio() {
+    const bgm = document.getElementById('bgm');
+    const soundBtn = document.getElementById('sound-btn');
+    if (!bgm || !soundBtn) return;
+
+    let hasInteracted = false;
+    let isPlaying = false;
+
+    const playMusic = () => {
+        if (!hasInteracted) {
+            hasInteracted = true;
+            bgm.volume = 0.5;
+            // Attempt to play
+            bgm.play().then(() => {
+                isPlaying = true;
+                soundBtn.textContent = '🎵 Sound: ON';
+            }).catch(() => {
+                // Autoplay blocked
+            });
+            window.removeEventListener('pointerdown', playMusic);
+            window.removeEventListener('keydown', playMusic);
+        }
+    };
+
+    // First interaction plays music
+    window.addEventListener('pointerdown', playMusic, { once: true });
+    window.addEventListener('keydown', playMusic, { once: true });
+
+    // Toggle button handler
+    soundBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        hasInteracted = true;
+        if (isPlaying) {
+            bgm.pause();
+            isPlaying = false;
+            soundBtn.textContent = '🎵 Sound: OFF';
+        } else {
+            bgm.volume = 0.5;
+            bgm.play().then(() => {
+                isPlaying = true;
+                soundBtn.textContent = '🎵 Sound: ON';
+            }).catch(() => {});
+        }
+    });
+}
+
 // ── Start ──
 init();
+initAudio();
 animate();
