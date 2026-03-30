@@ -246,6 +246,8 @@ canvas {
   border-radius: 20px;
   color: rgba(255, 255, 255, 0.7);
   font-size: 13px;
+  display: flex;
+  align-items: center;
   cursor: pointer;
   z-index: 100;
   backdrop-filter: blur(10px);

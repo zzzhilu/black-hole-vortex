@@ -378,7 +378,7 @@ function buildCameraUI() {
 
     const resetBtn = document.createElement('button');
     resetBtn.id = 'btn-reset';
-    resetBtn.textContent = '↻ Regenerate';
+    resetBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px; margin-bottom: 2px;"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> Regenerate';
     resetBtn.addEventListener('click', () => {
         resetBranches();
     });
@@ -393,10 +393,14 @@ function buildCameraUI() {
 
     const pauseBtn = document.createElement('button');
     pauseBtn.id = 'btn-pause';
-    pauseBtn.textContent = '⏸ Pause';
+    
+    const pauseSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px; margin-bottom: 2px;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
+    const playSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px; margin-bottom: 2px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+
+    pauseBtn.innerHTML = pauseSvg + ' Pause';
     pauseBtn.addEventListener('click', () => {
         paused = !paused;
-        pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+        pauseBtn.innerHTML = paused ? playSvg + ' Resume' : pauseSvg + ' Pause';
     });
 
     pauseRow.appendChild(pauseBtn);
@@ -407,7 +411,7 @@ function buildCameraUI() {
     // ── Vortex Parameters Section ──
     const divider = document.createElement('div');
     divider.className = 'ctrl-divider';
-    divider.textContent = '⚙ Vortex';
+    divider.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px; margin-bottom: 2px;"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg> Vortex';
     panel.appendChild(divider);
 
     // Growth Speed
@@ -488,7 +492,7 @@ function buildCameraUI() {
     // ── Energy Wave Section ──
     const waveDivider = document.createElement('div');
     waveDivider.className = 'ctrl-divider';
-    waveDivider.textContent = '⚡ Energy Wave';
+    waveDivider.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px; margin-bottom: 2px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Energy Wave';
     panel.appendChild(waveDivider);
 
     // Energy Wave toggle
@@ -530,7 +534,7 @@ function buildCameraUI() {
     // ── Bloom Section ──
     const bloomDivider = document.createElement('div');
     bloomDivider.className = 'ctrl-divider';
-    bloomDivider.textContent = '✦ Bloom';
+    bloomDivider.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px; margin-bottom: 2px;"><path d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7z"></path></svg> Bloom';
     panel.appendChild(bloomDivider);
 
     // Bloom toggle
@@ -590,7 +594,9 @@ function onKeyDown(e) {
         paused = !paused;
         const panel = document.getElementById('camera-panel');
         if (panel && panel._pauseBtn) {
-            panel._pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+            const pauseSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px; margin-bottom: 2px;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
+            const playSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px; margin-bottom: 2px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+            panel._pauseBtn.innerHTML = paused ? playSvg + ' Resume' : pauseSvg + ' Pause';
         }
     }
     // Up/Down arrows: adjust V-Rot Speed
@@ -682,6 +688,9 @@ function initAudio() {
     let hasInteracted = false;
     let isPlaying = false;
 
+    const soundSvgOff = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; margin-bottom: 2px;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>';
+    const soundSvgOn = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; margin-bottom: 2px;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>';
+
     const playMusic = () => {
         if (!hasInteracted) {
             hasInteracted = true;
@@ -689,7 +698,7 @@ function initAudio() {
             // Attempt to play
             bgm.play().then(() => {
                 isPlaying = true;
-                soundBtn.textContent = '🎵 Sound: ON';
+                soundBtn.innerHTML = soundSvgOn + '<span>Sound: ON</span>';
             }).catch(() => {
                 // Autoplay blocked
             });
@@ -709,12 +718,12 @@ function initAudio() {
         if (isPlaying) {
             bgm.pause();
             isPlaying = false;
-            soundBtn.textContent = '🎵 Sound: OFF';
+            soundBtn.innerHTML = soundSvgOff + '<span>Sound: OFF</span>';
         } else {
             bgm.volume = 0.5;
             bgm.play().then(() => {
                 isPlaying = true;
-                soundBtn.textContent = '🎵 Sound: ON';
+                soundBtn.innerHTML = soundSvgOn + '<span>Sound: ON</span>';
             }).catch(() => {});
         }
     });

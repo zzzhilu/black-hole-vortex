@@ -24,3 +24,6 @@ build/
 # Temporary files
 tmp/
 .tmp/
+
+# Local scripts
+git-push.bat

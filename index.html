@@ -25,14 +25,23 @@
   <div id="loading">LOADING</div>
 
   <!-- Audio Elements -->
-  <div id="sound-btn" title="Toggle Sound">🎵 Sound: OFF</div>
+  <div id="sound-btn" title="Toggle Sound">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; margin-bottom: 2px;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+    <span>Sound: OFF</span>
+  </div>
   <audio id="bgm" src="blackhole_vertex.mp3" loop preload="auto"></audio>
 
   <!-- Camera Control Panel -->
   <div id="ui-wrapper">
     <div id="ui-header">
-      <span>⚙ Camera</span>
-      <button id="ui-toggle" title="Toggle panel">—</button>
+      <span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; margin-bottom: 2px;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M8 13h2"></path><path d="M8 17h2"></path><path d="M14 13h2"></path><path d="M14 17h2"></path></svg>
+        Camera
+      </span>
+      <button id="ui-toggle" title="Toggle panel">
+        <svg class="icon-expand" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        <svg class="icon-collapse" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      </button>
     </div>
     <div id="camera-panel"></div>
   </div>
@@ -42,9 +51,13 @@
     document.addEventListener('DOMContentLoaded', () => {
       const btn = document.getElementById('ui-toggle');
       const panel = document.getElementById('camera-panel');
+      const iconExpand = btn.querySelector('.icon-expand');
+      const iconCollapse = btn.querySelector('.icon-collapse');
       btn.addEventListener('click', () => {
         panel.classList.toggle('collapsed');
-        btn.textContent = panel.classList.contains('collapsed') ? '+' : '—';
+        const isBtnCollapsed = panel.classList.contains('collapsed');
+        iconExpand.style.display = isBtnCollapsed ? 'block' : 'none';
+        iconCollapse.style.display = isBtnCollapsed ? 'none' : 'block';
       });
     });
   </script>
